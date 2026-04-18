@@ -19,7 +19,7 @@ import java.util.Map;
 @Configuration
 public class KafkaConfig {
 
-    public static final String TOPIC = "books-stream";
+    public static final String TOPIC = "biblio-stream";
 
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;

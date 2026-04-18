@@ -83,7 +83,7 @@ Extra query methods needed:
 ---
 
 ### TASK 4 — Kafka configuration
-**Goal:** Create `KafkaConfig.java` that declares the `books-stream` topic (1 partition, 1 replica) as a `NewTopic` bean, plus `ProducerFactory` and `ConsumerFactory` beans wired from `application.yml`.
+**Goal:** Create `KafkaConfig.java` that declares the `biblio-stream` topic (1 partition, 1 replica) as a `NewTopic` bean, plus `ProducerFactory` and `ConsumerFactory` beans wired from `application.yml`.
 
 `application.yml` Kafka section:
 ```yaml
@@ -124,7 +124,7 @@ Add a no-arg constructor + all-args constructor for Jackson deserialization.
 **`BookProducerJob`** (`@DisallowConcurrentExecution`)
 - Implements Quartz `Job`.
 - Configured subjects list injected from `application.yml` (`app.subjects`).
-- Every 2 minutes: for each subject → call client → publish each `BookMessage` to `books-stream` via `KafkaTemplate`.
+- Every 2 minutes: for each subject → call client → publish each `BookMessage` to `biblio-stream` via `KafkaTemplate`.
 - Log at INFO per batch, DEBUG per message.
 
 Quartz schedule in `application.yml`:
@@ -143,7 +143,7 @@ app:
 ---
 
 ### TASK 7 — Kafka consumer
-**Goal:** Create `BookConsumer.java` with a `@KafkaListener(topics = "books-stream")` method.
+**Goal:** Create `BookConsumer.java` with a `@KafkaListener(topics = "biblio-stream")` method.
 
 For each `BookMessage` received:
 1. Delegate to `BookServiceImpl.upsertBook(message)`.

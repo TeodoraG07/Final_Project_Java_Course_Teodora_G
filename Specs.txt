@@ -19,7 +19,7 @@ AppUser collection nice to have
 Fields: id, username, passwordHash, role. Only needed if auth is added later. Counts as the 6th entity.
 2. Kafka pipeline
 K-01
-One Kafka topic: books-stream kafka
+One Kafka topic: biblio-stream kafka
 Single partition, single replica — keep it simple for dev/demo.
 K-02
 Producer: Quartz job kafka
