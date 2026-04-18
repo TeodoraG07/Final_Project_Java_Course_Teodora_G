@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OpenLibraryClient.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">book-explorer</a> &gt; <a href="index.source.html" class="el_package">com.example.bookexplorer.client</a> &gt; <span class="el_source">OpenLibraryClient.java</span></div><h1>OpenLibraryClient.java</h1><pre class="source lang-java linenums">package com.example.bookexplorer.client;
+
+import com.example.bookexplorer.kafka.BookMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+@Component
+public class OpenLibraryClient {
+
+<span class="fc" id="L17">    private static final Logger log = LoggerFactory.getLogger(OpenLibraryClient.class);</span>
+    private static final String SEARCH_URL =
+            &quot;https://openlibrary.org/search.json?subject={subject}&amp;limit=20&quot;;
+
+    private final RestTemplate restTemplate;
+
+<span class="fc" id="L23">    public OpenLibraryClient(RestTemplate restTemplate) {</span>
+<span class="fc" id="L24">        this.restTemplate = restTemplate;</span>
+<span class="fc" id="L25">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public List&lt;BookMessage&gt; fetchBySubject(String subject) {
+        try {
+<span class="fc" id="L30">            Map&lt;String, Object&gt; response =</span>
+<span class="fc" id="L31">                    restTemplate.getForObject(SEARCH_URL, Map.class, subject);</span>
+
+<span class="pc bpc" id="L33" title="1 of 4 branches missed.">            if (response == null || !response.containsKey(&quot;docs&quot;)) {</span>
+<span class="fc" id="L34">                return List.of();</span>
+            }
+
+<span class="fc" id="L37">            List&lt;Map&lt;String, Object&gt;&gt; docs = (List&lt;Map&lt;String, Object&gt;&gt;) response.get(&quot;docs&quot;);</span>
+<span class="fc" id="L38">            List&lt;BookMessage&gt; messages = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L40" title="All 2 branches covered.">            for (Map&lt;String, Object&gt; doc : docs) {</span>
+<span class="fc" id="L41">                String olKey      = (String) doc.get(&quot;key&quot;);</span>
+<span class="fc" id="L42">                String title      = (String) doc.get(&quot;title&quot;);</span>
+<span class="fc" id="L43">                int publishYear   = toInt(doc.get(&quot;first_publish_year&quot;));</span>
+<span class="fc" id="L44">                int editionCount  = toInt(doc.get(&quot;edition_count&quot;));</span>
+<span class="fc" id="L45">                Long coverId      = toLong(doc.get(&quot;cover_i&quot;));</span>
+
+<span class="fc" id="L47">                List&lt;String&gt; authorNames = (List&lt;String&gt;) doc.get(&quot;author_name&quot;);</span>
+<span class="fc" id="L48">                List&lt;String&gt; authorKeys  = (List&lt;String&gt;) doc.get(&quot;author_key&quot;);</span>
+<span class="pc bpc" id="L49" title="1 of 4 branches missed.">                String authorName = (authorNames != null &amp;&amp; !authorNames.isEmpty()) ? authorNames.get(0) : &quot;Unknown&quot;;</span>
+<span class="pc bpc" id="L50" title="1 of 4 branches missed.">                String authorKey  = (authorKeys  != null &amp;&amp; !authorKeys.isEmpty())  ? authorKeys.get(0)  : &quot;unknown&quot;;</span>
+
+<span class="pc bpc" id="L52" title="1 of 4 branches missed.">                if (olKey == null || title == null) continue;</span>
+
+<span class="fc" id="L54">                messages.add(new BookMessage(olKey, title, authorName, authorKey,</span>
+                        subject, publishYear, editionCount, coverId));
+<span class="fc" id="L56">            }</span>
+
+<span class="fc" id="L58">            return messages;</span>
+
+<span class="fc" id="L60">        } catch (RestClientException e) {</span>
+<span class="fc" id="L61">            log.error(&quot;Failed to fetch books for subject '{}': {}&quot;, subject, e.getMessage());</span>
+<span class="fc" id="L62">            return List.of();</span>
+        }
+    }
+
+    private int toInt(Object value) {
+<span class="fc bfc" id="L67" title="All 2 branches covered.">        if (value instanceof Number n) return n.intValue();</span>
+<span class="fc" id="L68">        return 0;</span>
+    }
+
+    private Long toLong(Object value) {
+<span class="fc bfc" id="L72" title="All 2 branches covered.">        if (value instanceof Number n) return n.longValue();</span>
+<span class="fc" id="L73">        return null;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

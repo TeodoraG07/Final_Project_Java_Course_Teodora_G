@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Book.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">book-explorer</a> &gt; <a href="index.source.html" class="el_package">com.example.bookexplorer.model</a> &gt; <span class="el_source">Book.java</span></div><h1>Book.java</h1><pre class="source lang-java linenums">package com.example.bookexplorer.model;
+
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Document(&quot;books&quot;)
+public class Book {
+
+    @Id
+    private String id;
+
+    @NotBlank
+    @Indexed(unique = true)
+    private String olKey;
+
+    @NotBlank
+    private String title;
+
+    @Min(1000)
+    private int firstPublishYear;
+
+    private int editionCount;
+
+    private Long coverId;
+
+<span class="fc" id="L33">    @DBRef</span>
+    private List&lt;Author&gt; authors = new ArrayList&lt;&gt;();
+
+<span class="fc" id="L36">    @DBRef</span>
+    private List&lt;Subject&gt; subjects = new ArrayList&lt;&gt;();
+
+<span class="fc" id="L39">    public Book() {}</span>
+
+<span class="fc" id="L41">    public Book(String olKey, String title, int firstPublishYear, int editionCount, Long coverId) {</span>
+<span class="fc" id="L42">        this.olKey = olKey;</span>
+<span class="fc" id="L43">        this.title = title;</span>
+<span class="fc" id="L44">        this.firstPublishYear = firstPublishYear;</span>
+<span class="fc" id="L45">        this.editionCount = editionCount;</span>
+<span class="fc" id="L46">        this.coverId = coverId;</span>
+<span class="fc" id="L47">    }</span>
+
+<span class="fc" id="L49">    public String getId() { return id; }</span>
+<span class="fc" id="L50">    public void setId(String id) { this.id = id; }</span>
+
+<span class="fc" id="L52">    public String getOlKey() { return olKey; }</span>
+<span class="fc" id="L53">    public void setOlKey(String olKey) { this.olKey = olKey; }</span>
+
+<span class="fc" id="L55">    public String getTitle() { return title; }</span>
+<span class="fc" id="L56">    public void setTitle(String title) { this.title = title; }</span>
+
+<span class="fc" id="L58">    public int getFirstPublishYear() { return firstPublishYear; }</span>
+<span class="fc" id="L59">    public void setFirstPublishYear(int firstPublishYear) { this.firstPublishYear = firstPublishYear; }</span>
+
+<span class="nc" id="L61">    public int getEditionCount() { return editionCount; }</span>
+<span class="fc" id="L62">    public void setEditionCount(int editionCount) { this.editionCount = editionCount; }</span>
+
+<span class="fc" id="L64">    public Long getCoverId() { return coverId; }</span>
+<span class="fc" id="L65">    public void setCoverId(Long coverId) { this.coverId = coverId; }</span>
+
+<span class="fc" id="L67">    public List&lt;Author&gt; getAuthors() { return authors; }</span>
+<span class="fc" id="L68">    public void setAuthors(List&lt;Author&gt; authors) { this.authors = authors; }</span>
+
+<span class="fc" id="L70">    public List&lt;Subject&gt; getSubjects() { return subjects; }</span>
+<span class="nc" id="L71">    public void setSubjects(List&lt;Subject&gt; subjects) { this.subjects = subjects; }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,3 @@
+com\example\bookexplorer\controller\ExplorerControllerTest.class
+com\example\bookexplorer\service\BookServiceImplTest.class
+com\example\bookexplorer\client\OpenLibraryClientTest.class

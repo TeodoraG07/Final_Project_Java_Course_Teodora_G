@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Explorer</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header>
+    <h1>Book Explorer</h1>
+    <p class="subtitle">Streaming books from Open Library via Kafka</p>
+</header>
+
+<main>
+    <!-- Stat cards -->
+    <section class="stats-grid">
+        <div class="stat-card">
+            <span class="stat-value" th:text="${stats.totalBooks()}">0</span>
+            <span class="stat-label">Books Indexed</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value" th:text="${stats.totalSubjects()}">0</span>
+            <span class="stat-label">Subjects</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value" th:text="${stats.totalAuthors()}">0</span>
+            <span class="stat-label">Authors</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value" th:text="${stats.totalMessages()}">0</span>
+            <span class="stat-label">Messages Consumed</span>
+        </div>
+    </section>
+
+    <!-- Subject bubbles -->
+    <section>
+        <h2>Browse by Subject</h2>
+        <div class="subject-grid">
+            <a class="subject-bubble"
+               th:each="entry : ${subjects}"
+               th:href="@{/subject(name=${entry.key})}"
+               th:text="${entry.key + ' (' + entry.value + ')'}">
+                Subject
+            </a>
+        </div>
+    </section>
+</main>
+</body>
+</html>

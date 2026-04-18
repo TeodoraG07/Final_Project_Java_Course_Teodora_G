@@ -1,0 +1,94 @@
+1. Data model — MongoDB collections
+E-01
+Book collection must
+Fields: id, olKey, title, firstPublishYear, editionCount, coverId. References authors and subjects via @DBRef lists.
+E-02
+Author collection must
+Fields: id, olAuthorKey, name. Many books can share the same author — @DBRef from Book.
+E-03
+Subject collection must
+Fields: id, name, bookCount. Equivalent of @ManyToMany — Book stores a @DBRef list of Subjects.
+E-04
+KafkaEvent collection must
+Fields: id, bookId (@DBRef → Book), topic, offset, status, consumedAt. Equivalent of @OneToMany — one Book has many events.
+E-05
+SearchLog collection must
+Fields: id, query, resultsCount, searchedAt. Records every subject search made from the UI.
+E-06
+AppUser collection nice to have
+Fields: id, username, passwordHash, role. Only needed if auth is added later. Counts as the 6th entity.
+2. Kafka pipeline
+K-01
+One Kafka topic: books-stream kafka
+Single partition, single replica — keep it simple for dev/demo.
+K-02
+Producer: Quartz job kafka
+Runs every 2 minutes. Calls Open Library Search API for each configured subject. Publishes one BookMessage per book.
+K-03
+Consumer: @KafkaListener kafka
+Receives each BookMessage, upserts Book + Author + Subject to MongoDB, writes a KafkaEvent audit record.
+K-04
+BookMessage POJO (not persisted) kafka
+The object serialised into Kafka. Contains: olKey, title, authorName, authorKey, subject, firstPublishYear, editionCount, coverId.
+3. Backend — 3-layer architecture
+B-01
+Repository layer — one interface per collection must
+BookRepository, AuthorRepository, SubjectRepository, KafkaEventRepository, SearchLogRepository — all extend MongoRepository.
+B-02
+Service layer — interface + implementation must
+BookService / BookServiceImpl. All business logic lives here — upsert book, get by subject, top authors. Controller never touches the repository directly.
+B-03
+Controller layer must
+ExplorerController (@Controller) serves Thymeleaf views. BookRestController (@RestController) exposes the same data as JSON for RESTful compliance.
+B-04
+Global exception handler must
+One @ControllerAdvice class. Handles: resource not found → 404, bad input → 400, anything else → 500.
+B-05
+Validation on all documents must
+@NotBlank on title, olKey, name. @Min on firstPublishYear. @Valid on controller method params.
+B-06
+SLF4J logging throughout must
+No System.out.println. Every service method logs at INFO on entry, DEBUG for detail, ERROR on catch.
+4. UI — Thymeleaf pages
+U-01
+Home page: GET / must
+Shows 4 stat cards (books indexed, subjects, authors, messages consumed) + subject bubbles. Each bubble links to the subject page.
+U-02
+Subject page: GET /subject?name=X must
+Shows book cards (cover image, title, author, year) + top authors leaderboard with bar chart.
+U-03
+Search logs every subject click must
+When a user opens a subject page, a SearchLog document is saved to MongoDB with the query and timestamp.
+5. REST endpoints (JSON)
+R-01
+GET /api/subjects must
+Returns map of subject name → book count.
+R-02
+GET /api/books?subject=X must
+Returns list of books for a subject. Returns 404 if subject not found.
+R-03
+GET /api/authors?subject=X must
+Returns ranked list of authors for a subject with work count.
+R-04
+GET /api/stats must
+Returns totalBooks, totalSubjects, totalAuthors, totalMessages — used by the stat cards.
+6. Testing
+T-01
+Unit tests for BookServiceImpl must
+Mock BookRepository with Mockito. Test: upsertBook saves new book, upsertBook deduplicates by olKey, getBySubject returns correct list, getTopAuthors ranks correctly.
+T-02
+Unit tests for ExplorerController must
+Mock BookService. Test that correct template name is returned and model attributes are populated.
+T-03
+Unit tests for OpenLibraryClient must
+Mock RestTemplate. Test that JSON is parsed correctly into BookMessage and error responses are handled gracefully.
+T-04
+80% coverage target must
+Service layer + client are the priority. Use JaCoCo Maven plugin to measure.
+7. Infrastructure
+I-01
+Docker Compose file nice to have
+Three services: zookeeper, kafka, mongodb. App runs locally pointing at them.
+I-02
+Dockerfile for the app nice to have
+Simple multi-stage build: Maven build → slim JRE image. Gives the professor a docker image to run.

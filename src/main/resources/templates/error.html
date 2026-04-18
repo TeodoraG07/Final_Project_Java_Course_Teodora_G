@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header>
+    <a th:href="@{/}" class="back-link">← Home</a>
+    <h1>Something went wrong</h1>
+</header>
+
+<main>
+    <div class="error-box">
+        <p class="error-status" th:text="'HTTP ' + ${status}">Error</p>
+        <p class="error-message" th:text="${error}">An unexpected error occurred.</p>
+        <a th:href="@{/}" class="btn">Go back home</a>
+    </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KafkaEvent.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">book-explorer</a> &gt; <a href="index.source.html" class="el_package">com.example.bookexplorer.model</a> &gt; <span class="el_source">KafkaEvent.java</span></div><h1>KafkaEvent.java</h1><pre class="source lang-java linenums">package com.example.bookexplorer.model;
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.time.Instant;
+
+@Document(&quot;kafka_events&quot;)
+public class KafkaEvent {
+
+    @Id
+    private String id;
+
+    @DBRef
+    private Book bookId;
+
+    private String topic;
+
+    private long offset;
+
+    private String status;
+
+    private Instant consumedAt;
+
+<span class="nc" id="L26">    public KafkaEvent() {}</span>
+
+<span class="nc" id="L28">    public KafkaEvent(Book bookId, String topic, long offset, String status, Instant consumedAt) {</span>
+<span class="nc" id="L29">        this.bookId = bookId;</span>
+<span class="nc" id="L30">        this.topic = topic;</span>
+<span class="nc" id="L31">        this.offset = offset;</span>
+<span class="nc" id="L32">        this.status = status;</span>
+<span class="nc" id="L33">        this.consumedAt = consumedAt;</span>
+<span class="nc" id="L34">    }</span>
+
+<span class="nc" id="L36">    public String getId() { return id; }</span>
+<span class="nc" id="L37">    public void setId(String id) { this.id = id; }</span>
+
+<span class="nc" id="L39">    public Book getBookId() { return bookId; }</span>
+<span class="nc" id="L40">    public void setBookId(Book bookId) { this.bookId = bookId; }</span>
+
+<span class="nc" id="L42">    public String getTopic() { return topic; }</span>
+<span class="nc" id="L43">    public void setTopic(String topic) { this.topic = topic; }</span>
+
+<span class="nc" id="L45">    public long getOffset() { return offset; }</span>
+<span class="nc" id="L46">    public void setOffset(long offset) { this.offset = offset; }</span>
+
+<span class="nc" id="L48">    public String getStatus() { return status; }</span>
+<span class="nc" id="L49">    public void setStatus(String status) { this.status = status; }</span>
+
+<span class="nc" id="L51">    public Instant getConsumedAt() { return consumedAt; }</span>
+<span class="nc" id="L52">    public void setConsumedAt(Instant consumedAt) { this.consumedAt = consumedAt; }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

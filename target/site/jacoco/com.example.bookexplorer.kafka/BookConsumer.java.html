@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BookConsumer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">book-explorer</a> &gt; <a href="index.source.html" class="el_package">com.example.bookexplorer.kafka</a> &gt; <span class="el_source">BookConsumer.java</span></div><h1>BookConsumer.java</h1><pre class="source lang-java linenums">package com.example.bookexplorer.kafka;
+
+import com.example.bookexplorer.model.Book;
+import com.example.bookexplorer.model.KafkaEvent;
+import com.example.bookexplorer.repository.KafkaEventRepository;
+import com.example.bookexplorer.service.BookService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.stereotype.Component;
+
+import java.time.Instant;
+
+@Component
+public class BookConsumer {
+
+<span class="nc" id="L19">    private static final Logger log = LoggerFactory.getLogger(BookConsumer.class);</span>
+    private static final String TOPIC = KafkaConfig.TOPIC;
+
+    private final BookService bookService;
+    private final KafkaEventRepository kafkaEventRepository;
+
+<span class="nc" id="L25">    public BookConsumer(BookService bookService, KafkaEventRepository kafkaEventRepository) {</span>
+<span class="nc" id="L26">        this.bookService = bookService;</span>
+<span class="nc" id="L27">        this.kafkaEventRepository = kafkaEventRepository;</span>
+<span class="nc" id="L28">    }</span>
+
+    @KafkaListener(topics = KafkaConfig.TOPIC, groupId = &quot;${spring.kafka.consumer.group-id}&quot;)
+    public void consume(BookMessage message, @Header(KafkaHeaders.OFFSET) long offset) {
+        try {
+<span class="nc" id="L33">            Book book = bookService.upsertBook(message);</span>
+
+<span class="nc" id="L35">            KafkaEvent event = new KafkaEvent(book, TOPIC, offset, &quot;CONSUMED&quot;, Instant.now());</span>
+<span class="nc" id="L36">            kafkaEventRepository.save(event);</span>
+
+<span class="nc" id="L38">            log.info(&quot;Consumed message for book '{}' at offset {}&quot;, message.getOlKey(), offset);</span>
+
+<span class="nc" id="L40">        } catch (Exception e) {</span>
+<span class="nc" id="L41">            log.error(&quot;Failed to process message for book '{}' at offset {}: {}&quot;,</span>
+<span class="nc" id="L42">                    message.getOlKey(), offset, e.getMessage());</span>
+
+<span class="nc" id="L44">            KafkaEvent failed = new KafkaEvent(null, TOPIC, offset, &quot;FAILED&quot;, Instant.now());</span>
+<span class="nc" id="L45">            kafkaEventRepository.save(failed);</span>
+<span class="nc" id="L46">        }</span>
+<span class="nc" id="L47">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

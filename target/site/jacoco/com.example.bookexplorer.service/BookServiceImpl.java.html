@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BookServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">book-explorer</a> &gt; <a href="index.source.html" class="el_package">com.example.bookexplorer.service</a> &gt; <span class="el_source">BookServiceImpl.java</span></div><h1>BookServiceImpl.java</h1><pre class="source lang-java linenums">package com.example.bookexplorer.service;
+
+import com.example.bookexplorer.kafka.BookMessage;
+import com.example.bookexplorer.model.Author;
+import com.example.bookexplorer.model.Book;
+import com.example.bookexplorer.model.Subject;
+import com.example.bookexplorer.repository.AuthorRepository;
+import com.example.bookexplorer.repository.BookRepository;
+import com.example.bookexplorer.repository.KafkaEventRepository;
+import com.example.bookexplorer.repository.SubjectRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Service
+public class BookServiceImpl implements BookService {
+
+<span class="fc" id="L23">    private static final Logger log = LoggerFactory.getLogger(BookServiceImpl.class);</span>
+
+    private final BookRepository bookRepository;
+    private final AuthorRepository authorRepository;
+    private final SubjectRepository subjectRepository;
+    private final KafkaEventRepository kafkaEventRepository;
+
+    public BookServiceImpl(BookRepository bookRepository,
+                           AuthorRepository authorRepository,
+                           SubjectRepository subjectRepository,
+<span class="fc" id="L33">                           KafkaEventRepository kafkaEventRepository) {</span>
+<span class="fc" id="L34">        this.bookRepository = bookRepository;</span>
+<span class="fc" id="L35">        this.authorRepository = authorRepository;</span>
+<span class="fc" id="L36">        this.subjectRepository = subjectRepository;</span>
+<span class="fc" id="L37">        this.kafkaEventRepository = kafkaEventRepository;</span>
+<span class="fc" id="L38">    }</span>
+
+    @Override
+    public Book upsertBook(BookMessage msg) {
+<span class="fc" id="L42">        log.info(&quot;upsertBook called for olKey={}&quot;, msg.getOlKey());</span>
+        try {
+            // Step 1: find-or-create Author
+<span class="fc" id="L45">            Author author = authorRepository.findByOlAuthorKey(msg.getAuthorKey())</span>
+<span class="fc" id="L46">                    .orElseGet(() -&gt; authorRepository.save(new Author(msg.getAuthorKey(), msg.getAuthorName())));</span>
+
+            // Step 2: find-or-create Subject
+<span class="fc" id="L49">            boolean[] subjectIsNew = {false};</span>
+<span class="fc" id="L50">            Subject subject = subjectRepository.findByName(msg.getSubject())</span>
+<span class="fc" id="L51">                    .orElseGet(() -&gt; {</span>
+<span class="fc" id="L52">                        subjectIsNew[0] = true;</span>
+<span class="fc" id="L53">                        return subjectRepository.save(new Subject(msg.getSubject()));</span>
+                    });
+
+            // Step 3: find-or-create Book, update mutable fields either way
+<span class="fc" id="L57">            Book book = bookRepository.findByOlKey(msg.getOlKey()).orElseGet(Book::new);</span>
+<span class="fc" id="L58">            book.setOlKey(msg.getOlKey());</span>
+<span class="fc" id="L59">            book.setTitle(msg.getTitle());</span>
+<span class="fc" id="L60">            book.setFirstPublishYear(msg.getFirstPublishYear());</span>
+<span class="fc" id="L61">            book.setEditionCount(msg.getEditionCount());</span>
+<span class="fc" id="L62">            book.setCoverId(msg.getCoverId());</span>
+
+            // Step 4: add author + subject if not already present (compare by natural key)
+<span class="fc bfc" id="L65" title="All 2 branches covered.">            boolean bookIsNew = book.getId() == null;</span>
+<span class="fc" id="L66">            boolean authorMissing = book.getAuthors().stream()</span>
+<span class="fc" id="L67">                    .noneMatch(a -&gt; a.getOlAuthorKey().equals(author.getOlAuthorKey()));</span>
+<span class="fc" id="L68">            boolean subjectMissing = book.getSubjects().stream()</span>
+<span class="fc" id="L69">                    .noneMatch(s -&gt; s.getName().equals(subject.getName()));</span>
+
+<span class="fc bfc" id="L71" title="All 2 branches covered.">            if (authorMissing)  book.getAuthors().add(author);</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">            if (subjectMissing) book.getSubjects().add(subject);</span>
+
+            // Increment bookCount only when this is a genuinely new book for this subject
+<span class="pc bpc" id="L75" title="1 of 4 branches missed.">            if (bookIsNew || subjectIsNew[0]) {</span>
+<span class="fc" id="L76">                subject.setBookCount(subject.getBookCount() + 1);</span>
+<span class="fc" id="L77">                subjectRepository.save(subject);</span>
+            }
+
+<span class="fc" id="L80">            Book saved = bookRepository.save(book);</span>
+<span class="fc" id="L81">            log.debug(&quot;upsertBook saved book id={} olKey={}&quot;, saved.getId(), saved.getOlKey());</span>
+<span class="fc" id="L82">            return saved;</span>
+<span class="nc" id="L83">        } catch (Exception e) {</span>
+<span class="nc" id="L84">            log.error(&quot;Error in upsertBook for olKey={}: {}&quot;, msg.getOlKey(), e.getMessage());</span>
+<span class="nc" id="L85">            throw e;</span>
+        }
+    }
+
+    @Override
+    public List&lt;Book&gt; getBySubject(String subjectName) {
+<span class="fc" id="L91">        log.info(&quot;getBySubject called for subject={}&quot;, subjectName);</span>
+        try {
+<span class="fc" id="L93">            Subject subject = subjectRepository.findByName(subjectName).orElse(null);</span>
+<span class="fc bfc" id="L94" title="All 2 branches covered.">            if (subject == null) {</span>
+<span class="fc" id="L95">                log.debug(&quot;No subject found for name={}&quot;, subjectName);</span>
+<span class="fc" id="L96">                return List.of();</span>
+            }
+<span class="fc" id="L98">            List&lt;Book&gt; books = bookRepository.findBySubjectsContaining(subject);</span>
+<span class="fc" id="L99">            log.debug(&quot;Found {} books for subject={}&quot;, books.size(), subjectName);</span>
+<span class="fc" id="L100">            return books;</span>
+<span class="nc" id="L101">        } catch (Exception e) {</span>
+<span class="nc" id="L102">            log.error(&quot;Error in getBySubject for subject={}: {}&quot;, subjectName, e.getMessage());</span>
+<span class="nc" id="L103">            throw e;</span>
+        }
+    }
+
+    @Override
+    public List&lt;AuthorCount&gt; getTopAuthors(String subjectName, int limit) {
+<span class="fc" id="L109">        log.info(&quot;getTopAuthors called for subject={}, limit={}&quot;, subjectName, limit);</span>
+        try {
+<span class="fc" id="L111">            List&lt;Book&gt; books = getBySubject(subjectName);</span>
+
+<span class="fc" id="L113">            Map&lt;String, Long&gt; countByAuthorId = books.stream()</span>
+<span class="fc" id="L114">                    .flatMap(b -&gt; b.getAuthors().stream())</span>
+<span class="fc" id="L115">                    .collect(Collectors.groupingBy(Author::getId, Collectors.counting()));</span>
+
+<span class="fc" id="L117">            List&lt;AuthorCount&gt; result = countByAuthorId.entrySet().stream()</span>
+<span class="fc" id="L118">                    .map(e -&gt; {</span>
+<span class="fc" id="L119">                        Author author = authorRepository.findById(e.getKey()).orElseThrow();</span>
+<span class="fc" id="L120">                        return new AuthorCount(author, e.getValue());</span>
+                    })
+<span class="fc" id="L122">                    .sorted(Comparator.comparingLong(AuthorCount::count).reversed())</span>
+<span class="fc" id="L123">                    .limit(limit)</span>
+<span class="fc" id="L124">                    .collect(Collectors.toList());</span>
+
+<span class="fc" id="L126">            log.debug(&quot;getTopAuthors returning {} entries for subject={}&quot;, result.size(), subjectName);</span>
+<span class="fc" id="L127">            return result;</span>
+<span class="nc" id="L128">        } catch (Exception e) {</span>
+<span class="nc" id="L129">            log.error(&quot;Error in getTopAuthors for subject={}: {}&quot;, subjectName, e.getMessage());</span>
+<span class="nc" id="L130">            throw e;</span>
+        }
+    }
+
+    @Override
+    public Map&lt;String, Long&gt; getSubjectBookCounts() {
+<span class="fc" id="L136">        log.info(&quot;getSubjectBookCounts called&quot;);</span>
+        try {
+<span class="fc" id="L138">            Map&lt;String, Long&gt; counts = subjectRepository.findAll().stream()</span>
+<span class="fc" id="L139">                    .collect(Collectors.toMap(Subject::getName, Subject::getBookCount));</span>
+<span class="fc" id="L140">            log.debug(&quot;getSubjectBookCounts returning {} subjects&quot;, counts.size());</span>
+<span class="fc" id="L141">            return counts;</span>
+<span class="nc" id="L142">        } catch (Exception e) {</span>
+<span class="nc" id="L143">            log.error(&quot;Error in getSubjectBookCounts: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L144">            throw e;</span>
+        }
+    }
+
+    @Override
+    public StatsDto getStats() {
+<span class="fc" id="L150">        log.info(&quot;getStats called&quot;);</span>
+        try {
+<span class="fc" id="L152">            long totalBooks    = bookRepository.count();</span>
+<span class="fc" id="L153">            long totalSubjects = subjectRepository.count();</span>
+<span class="fc" id="L154">            long totalAuthors  = authorRepository.count();</span>
+<span class="fc" id="L155">            long totalMessages = kafkaEventRepository.count();</span>
+<span class="fc" id="L156">            log.debug(&quot;Stats: books={}, subjects={}, authors={}, messages={}&quot;,</span>
+<span class="fc" id="L157">                    totalBooks, totalSubjects, totalAuthors, totalMessages);</span>
+<span class="fc" id="L158">            return new StatsDto(totalBooks, totalSubjects, totalAuthors, totalMessages);</span>
+<span class="nc" id="L159">        } catch (Exception e) {</span>
+<span class="nc" id="L160">            log.error(&quot;Error in getStats: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L161">            throw e;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

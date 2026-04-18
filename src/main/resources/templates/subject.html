@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'Books: ' + ${subjectName}">Subject</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header>
+    <a th:href="@{/}" class="back-link">← Home</a>
+    <h1 th:text="${subjectName}" class="capitalize">Subject</h1>
+</header>
+
+<main>
+    <!-- Book cards -->
+    <section>
+        <h2>Books</h2>
+        <div th:if="${#lists.isEmpty(books)}" class="empty-state">
+            No books found for this subject yet. Check back after the next sync.
+        </div>
+        <div class="book-grid" th:unless="${#lists.isEmpty(books)}">
+            <div class="book-card" th:each="book : ${books}">
+                <img th:if="${book.coverId != null}"
+                     th:src="'https://covers.openlibrary.org/b/id/' + ${book.coverId} + '-M.jpg'"
+                     th:alt="${book.title}"
+                     class="book-cover">
+                <div th:unless="${book.coverId != null}" class="book-cover-placeholder">No Cover</div>
+                <div class="book-info">
+                    <h3 class="book-title" th:text="${book.title}">Title</h3>
+                    <p class="book-author"
+                       th:text="${not #lists.isEmpty(book.authors)} ? ${book.authors[0].name} : 'Unknown'">
+                        Author
+                    </p>
+                    <p class="book-year" th:text="${book.firstPublishYear > 0} ? ${book.firstPublishYear} : '—'">
+                        Year
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Top authors bar chart -->
+    <section th:unless="${#lists.isEmpty(topAuthors)}">
+        <h2>Top Authors</h2>
+        <div class="bar-chart">
+            <div class="bar-row" th:each="ac, stat : ${topAuthors}">
+                <span class="bar-label" th:text="${ac.author().name}">Author</span>
+                <div class="bar-track">
+                    <div class="bar-fill"
+                         th:style="'width: ' + ${(ac.count() * 100) / topAuthors[0].count()} + '%'">
+                    </div>
+                </div>
+                <span class="bar-count" th:text="${ac.count()}">0</span>
+
+            </div>
+        </div>
+    </section>
+</main>
+</body>
+</html>
